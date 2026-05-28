@@ -25,11 +25,9 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/github/repo-size/roshankumar0036singh/auth-server" />
     <img src="https://img.shields.io/github/languages/count/roshankumar0036singh/auth-server" />
     <img src="https://img.shields.io/github/stars/roshankumar0036singh/auth-server" />
     <img src="https://img.shields.io/github/forks/roshankumar0036singh/auth-server" />
-    <img src="https://img.shields.io/github/last-commit/roshankumar0036singh/auth-server" />
   </p>
 
   <p>
@@ -144,7 +142,6 @@ Access the server at `http://localhost:8080` and docs at `/swagger/`.
 > We thrive on community contributions. Whether it's fixing a bug, improving docs, or proposing a new feature, your help is welcome!
 
 ### Join the Discussion
-- 💬 **Discord Server** — [Join our community](https://discord.gg/your-link)
 - 🧭 **GitHub Discussions** — [Share ideas](https://github.com/roshankumar0036singh/auth-server/discussions)
 
 ### How to Contribute
