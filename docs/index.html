@@ -1,29 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Auth Server API - Documentation</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
     <style>
         :root {
-            --primary: #6366f1;
-            /* Indigo 500 */
-            --primary-hover: #4f46e5;
-            /* Indigo 600 */
-            --bg-body: #0f1117;
-            /* Very Dark Slate */
-            --bg-nav: #161b22;
-            /* Darker header */
-            --bg-card: #1e293b;
-            /* Slate 800 */
-            --text-primary: #e2e8f0;
-            /* Slate 200 */
-            --text-secondary: #94a3b8;
-            /* Slate 400 */
-            --border-color: #334155;
-            /* Slate 700 */
+            /* Vibrant Brand Colors */
+            --primary: #8b5cf6;
+            --primary-glow: rgba(139, 92, 246, 0.5);
+            --secondary: #ec4899;
+            --accent: #06b6d4;
+            
+            /* Dark Theme Backgrounds */
+            --bg-base: #09090b;
+            --bg-glass: rgba(24, 24, 27, 0.7);
+            --bg-glass-hover: rgba(39, 39, 42, 0.8);
+            
+            /* Text Colors */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Borders */
+            --border-glass: rgba(255, 255, 255, 0.1);
+            
+            /* HTTP Method Colors */
+            --get-color: #3b82f6;
+            --post-color: #10b981;
+            --put-color: #f59e0b;
+            --delete-color: #ef4444;
         }
 
         * {
@@ -33,278 +41,310 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-body);
-            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
             min-height: 100vh;
+            /* Animated subtle background gradient */
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(236, 72, 153, 0.15), transparent 25%);
+            background-attachment: fixed;
         }
 
-        /* Header */
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-base);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3f3f46;
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* Stunning Header */
         .header {
-            background-color: var(--bg-nav);
-            border-bottom: 1px solid var(--border-color);
-            padding: 1.5rem 0;
-            margin-bottom: 2rem;
+            padding: 3rem 0;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border-glass);
+            background: linear-gradient(180deg, rgba(9, 9, 11, 0) 0%, var(--bg-base) 100%);
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
         }
 
         .header-content {
             max-width: 1400px;
             margin: 0 auto;
             padding: 0 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
+            position: relative;
+            z-index: 10;
         }
 
         .header-title-row {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 1.25rem;
+            margin-bottom: 1rem;
         }
 
         .logo-icon {
-            font-size: 2rem;
+            font-size: 2.5rem;
+            filter: drop-shadow(0 0 15px var(--primary-glow));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
         }
 
         .header-title {
-            font-size: 1.75rem;
+            font-size: 2.5rem;
             font-weight: 700;
-            color: var(--primary);
-            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #fff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
         }
 
         .header-subtitle {
-            font-size: 1rem;
-            color: var(--text-secondary);
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            font-weight: 300;
         }
 
+        /* Pill Badges */
         .badges {
             display: flex;
-            gap: 0.75rem;
+            gap: 1rem;
             flex-wrap: wrap;
         }
 
         .badge {
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            background-color: rgba(99, 102, 241, 0.1);
-            color: var(--primary);
-            border: 1px solid rgba(99, 102, 241, 0.2);
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .badge:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+        }
+
+        .badge.live {
+            background: rgba(16, 185, 129, 0.1);
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.3);
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
-        .badge.live {
-            background-color: rgba(16, 185, 129, 0.1);
-            color: #10b981;
-            border-color: rgba(16, 185, 129, 0.2);
-        }
-
         .status-dot {
-            width: 6px;
-            height: 6px;
-            background-color: currentColor;
+            width: 8px;
+            height: 8px;
+            background-color: #34d399;
             border-radius: 50%;
+            box-shadow: 0 0 10px #34d399;
+            animation: pulse 2s infinite;
         }
 
-        /* Main Container */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+        }
+
+        /* Swagger Glassmorphism UI */
         .swagger-container {
             max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem 4rem;
+            margin: -2rem auto 4rem;
+            padding: 2rem;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 24px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 20;
         }
 
-        /* Swagger UI Overrides for Dark Mode */
+        /* Deep Swagger Overrides */
         .swagger-ui {
-            font-family: inherit;
-            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-main);
         }
 
-        /* Hide Topbar */
-        .swagger-ui .topbar {
-            display: none;
-        }
+        .swagger-ui .topbar { display: none; }
 
-        /* General Text Colors */
-        .swagger-ui .info .title,
-        .swagger-ui .info h1,
-        .swagger-ui .info h2,
-        .swagger-ui .info h3,
-        .swagger-ui .info h4,
-        .swagger-ui .info h5,
-        .swagger-ui .info p,
-        .swagger-ui .info li,
-        .swagger-ui .scheme-container {
-            background: var(--bg-card) !important;
+        /* General Base Resets */
+        .swagger-ui .info,
+        .swagger-ui .scheme-container,
+        .swagger-ui section.models {
+            background: transparent !important;
             box-shadow: none !important;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
+            border: none !important;
             margin-bottom: 2rem;
         }
 
-        .swagger-ui section.models h4,
-        .swagger-ui section.models h5 {
-            color: var(--text-primary) !important;
-        }
-
         .swagger-ui .info .title {
-            font-size: 2rem;
+            color: #fff;
             font-weight: 700;
-            margin-bottom: 1rem;
         }
 
-        /* Operations */
+        .swagger-ui p, .swagger-ui li, .swagger-ui h1, .swagger-ui h2, .swagger-ui h3, .swagger-ui h4, .swagger-ui h5 {
+            color: var(--text-main) !important;
+        }
+
+        /* Opblocks (Endpoints) */
         .swagger-ui .opblock {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-shadow: none;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
             margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: none;
         }
 
         .swagger-ui .opblock:hover {
-            border-color: var(--text-secondary);
-        }
-
-        .swagger-ui .opblock-summary {
-            border-bottom: 1px solid transparent;
-        }
-
-        .swagger-ui .opblock.is-open .opblock-summary {
-            border-bottom-color: var(--border-color);
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(4px);
         }
 
         .swagger-ui .opblock-summary-method {
-            border-radius: 4px;
-            font-weight: 700;
-            min-width: 80px;
-            text-shadow: none;
-        }
-
-        .swagger-ui .opblock-summary-path,
-        .swagger-ui .opblock-summary-description {
-            color: var(--text-primary) !important;
-        }
-
-        /* Models */
-        .swagger-ui section.models {
-            border: 1px solid var(--border-color);
             border-radius: 8px;
-            background: var(--bg-card);
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 8px 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
-        .swagger-ui section.models .model-container {
-            background: transparent;
+        /* Method Colors with Glow */
+        .swagger-ui .opblock.opblock-get .opblock-summary-method { background: var(--get-color); }
+        .swagger-ui .opblock.opblock-post .opblock-summary-method { background: var(--post-color); }
+        .swagger-ui .opblock.opblock-put .opblock-summary-method { background: var(--put-color); }
+        .swagger-ui .opblock.opblock-delete .opblock-summary-method { background: var(--delete-color); }
+
+        .swagger-ui .opblock-summary-path { color: #fff !important; font-weight: 500; font-size: 1.1rem; }
+        .swagger-ui .opblock-summary-description { color: var(--text-muted) !important; }
+        
+        /* Body sections */
+        .swagger-ui .opblock-body pre.microlight {
+            background: #000 !important;
+            border-radius: 8px;
+            border: 1px solid var(--border-glass);
         }
 
-        .swagger-ui .model-box {
-            background: transparent;
-        }
-
-        .swagger-ui .model-title {
-            color: var(--text-primary) !important;
-        }
-
-        .swagger-ui section.models h4,
-        .swagger-ui section.models h5 {
-            color: var(--text-primary) !important;
-        }
-
-        .swagger-ui .model {
-            color: var(--text-primary) !important;
-        }
-
-        .swagger-ui .model span {
-            color: var(--text-primary);
-        }
-
-        /* Fix Model Property Names */
-        .swagger-ui section.models .property.primitive {
-            color: var(--text-secondary);
-        }
-
-        /* Inputs/Tables */
+        /* Inputs & Tables */
         .swagger-ui input[type=email],
         .swagger-ui input[type=password],
         .swagger-ui input[type=search],
         .swagger-ui input[type=text],
-        .swagger-ui textarea {
-            background: #0f1117;
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            border-radius: 4px;
+        .swagger-ui textarea,
+        .swagger-ui select {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-glass);
+            color: #fff;
+            border-radius: 8px;
+            padding: 8px 12px;
+            transition: border-color 0.3s;
+        }
+
+        .swagger-ui input:focus, .swagger-ui textarea:focus {
+            border-color: var(--primary);
+            outline: none;
         }
 
         .swagger-ui table thead tr th,
-        .swagger-ui table thead tr td,
-        .swagger-ui .parameters-col_description {
-            color: var(--text-primary) !important;
+        .swagger-ui table thead tr td {
+            color: var(--text-main) !important;
+            border-bottom: 1px solid var(--border-glass);
         }
 
-        .swagger-ui .parameter__name {
-            color: var(--text-primary) !important;
-        }
+        .swagger-ui .parameter__name { color: var(--primary) !important; font-weight: 600;}
+        .swagger-ui .parameter__type { color: var(--secondary) !important; }
 
-        .swagger-ui .parameter__type {
-            color: var(--text-secondary) !important;
-        }
-
-        /* Buttons */
-        .swagger-ui .btn {
-            box-shadow: none;
-            border-radius: 4px;
-        }
-
+        /* Authorize Button */
         .swagger-ui .btn.authorize {
-            background-color: transparent;
-            color: var(--primary);
-            border-color: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 24px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px var(--primary-glow);
+            transition: all 0.3s ease;
         }
-
         .swagger-ui .btn.authorize:hover {
-            background-color: rgba(99, 102, 241, 0.1);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4);
+        }
+        .swagger-ui .btn.authorize svg { fill: #fff; }
+
+        /* Models Section */
+        .swagger-ui section.models {
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 1rem;
         }
 
-        .swagger-ui .btn.authorize svg {
-            fill: var(--primary);
+        .swagger-ui .model-title,
+        .swagger-ui .model {
+            color: var(--text-main) !important;
         }
-
-        .swagger-ui .opblock-control-arrow {
-            fill: var(--text-secondary);
-        }
-
-        /* Expand/Collapse icons */
+        .swagger-ui section.models .property.primitive { color: var(--text-muted); }
+        .swagger-ui section.models .model-container { background: transparent; }
+        
+        /* Expand/Collapse Arrows */
+        .swagger-ui .opblock-control-arrow,
         .swagger-ui .expand-methods svg,
         .swagger-ui .expand-operation svg {
-            fill: var(--text-secondary) !important;
+            fill: var(--text-muted) !important;
+            transition: transform 0.3s;
         }
     </style>
 </head>
-
 <body>
 
     <header class="header">
         <div class="header-content">
             <div class="header-title-row">
-                <span class="logo-icon">🔐</span>
+                <span class="logo-icon">✨</span>
                 <h1 class="header-title">Auth Server API</h1>
             </div>
-            <p class="header-subtitle">Production-ready Authentication Server with OAuth 2.0 Provider</p>
+            <p class="header-subtitle">Next-Generation Authentication & Authorization API</p>
 
             <div class="badges">
                 <div class="badge live">
                     <span class="status-dot"></span>
-                    <span>Live</span>
+                    <span>Systems Operational</span>
                 </div>
-                <div class="badge">v1.0</div>
-                <div class="badge">Go + Gin</div>
-                <div class="badge">PostgreSQL + Redis</div>
+                <div class="badge">v1.0.0</div>
+                <div class="badge">Go / Gin-Gonic</div>
+                <div class="badge">PostgreSQL + Supabase</div>
+                <div class="badge">Redis Caching</div>
                 <div class="badge">OAuth 2.0</div>
-                <div class="badge">JWT + MFA</div>
             </div>
         </div>
     </header>
@@ -339,5 +379,4 @@
         };
     </script>
 </body>
-
 </html>
