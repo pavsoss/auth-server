@@ -9,6 +9,11 @@ import (
 
 var ErrUserNotFound = errors.New("user not found")
 
+const (
+	whereByID = "id = ?"
+)
+
+
 type UserRepository struct {
 	db *gorm.DB
 }
@@ -20,7 +25,7 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 // FindByID finds a user by ID
 func (r *UserRepository) FindByID(id string) (*models.User, error) {
 	var user models.User
-	if err := r.db.First(&user, "id = ?", id).Error; err != nil {
+	if err := r.db.First(&user, whereByID, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrUserNotFound
 		}
@@ -48,7 +53,7 @@ func (r *UserRepository) Create(user *models.User) error {
 
 // Update updates user fields
 func (r *UserRepository) Update(id string, updates map[string]interface{}) error {
-	result := r.db.Model(&models.User{}).Where("id = ?", id).Updates(updates)
+	result := r.db.Model(&models.User{}).Where(whereByID, id).Updates(updates)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -60,7 +65,7 @@ func (r *UserRepository) Update(id string, updates map[string]interface{}) error
 
 // Delete soft deletes a user (if using soft delete) or hard deletes
 func (r *UserRepository) Delete(id string) error {
-	result := r.db.Delete(&models.User{}, "id = ?", id)
+	result := r.db.Delete(&models.User{}, whereByID, id)
 	if result.Error != nil {
 		return result.Error
 	}

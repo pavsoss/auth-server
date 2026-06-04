@@ -11,6 +11,12 @@ import (
 	"github.com/roshankumar0036singh/auth-server/internal/utils"
 )
 
+const (
+	userAgentHeader = "User-Agent"
+	msgLoginSuccess = "Login successful"
+	msgLoginFailed  = "Login failed"
+)
+
 type AuthHandler struct {
 	authService  *service.AuthService
 	oauthService *service.OAuthService
@@ -281,12 +287,12 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// Get device information
 	ipAddress := c.ClientIP()
-	userAgent := c.GetHeader("User-Agent")
+	userAgent := c.GetHeader(userAgentHeader)
 
 	// Authenticate user
 	loginResp, err := h.authService.Login(&req, ipAddress, userAgent)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, utils.ErrorResponse("Login failed", err))
+		c.JSON(http.StatusUnauthorized, utils.ErrorResponse(msgLoginFailed, err))
 		return
 	}
 
@@ -294,7 +300,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	// MaxAge is 7 days (matching refresh token)
 	c.SetCookie("auth_token", loginResp.AccessToken, 7*24*3600, "/", "", false, true)
 
-	c.JSON(http.StatusOK, utils.SuccessResponse("Login successful", loginResp))
+	c.JSON(http.StatusOK, utils.SuccessResponse(msgLoginSuccess, loginResp))
 }
 
 // RefreshToken handles refresh token requests with token rotation
@@ -316,7 +322,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 	// Get device information for new token
 	ipAddress := c.ClientIP()
-	userAgent := c.GetHeader("User-Agent")
+	userAgent := c.GetHeader(userAgentHeader)
 
 	// Refresh with token rotation
 	tokenResp, err := h.authService.RefreshAccessToken(req.RefreshToken, ipAddress, userAgent)
@@ -496,6 +502,8 @@ func (h *AuthHandler) RevokeSession(c *gin.Context) {
 // @Tags auth
 // @Router /api/auth/google/login [get]
 func (h *AuthHandler) GoogleLogin(c *gin.Context) {
+	clientID := c.Query("client_id")
+
 	state, err := h.oauthService.GenerateState()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse("Failed to generate state", err))
@@ -504,8 +512,17 @@ func (h *AuthHandler) GoogleLogin(c *gin.Context) {
 
 	// Store state in cookie for verification
 	c.SetCookie("oauth_state", state, 3600, "/", "", false, true) // Secure should be true in prod
+	if clientID != "" {
+		c.SetCookie("oauth_client_id", clientID, 3600, "/", "", false, true)
+	} else {
+		c.SetCookie("oauth_client_id", "", -1, "/", "", false, true)
+	}
 
-	url := h.oauthService.GetGoogleAuthURL(state)
+	url, err := h.oauthService.GetGoogleAuthURL(clientID, state)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse("Failed to get auth URL", err))
+		return
+	}
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -524,18 +541,21 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	// Clear cookie
+	clientID, _ := c.Cookie("oauth_client_id")
+
+	// Clear cookies
 	c.SetCookie("oauth_state", "", -1, "/", "", false, true)
+	c.SetCookie("oauth_client_id", "", -1, "/", "", false, true)
 
 	// Exchange code
-	token, err := h.oauthService.ExchangeGoogleCode(c.Request.Context(), code)
+	token, err := h.oauthService.ExchangeGoogleCode(c.Request.Context(), clientID, code)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse("Failed to exchange token", err))
 		return
 	}
 
 	// Get user info
-	userInfo, err := h.oauthService.FetchGoogleUser(c.Request.Context(), token)
+	userInfo, err := h.oauthService.FetchGoogleUser(c.Request.Context(), clientID, token)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse("Failed to fetch user info", err))
 		return
@@ -551,11 +571,11 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 
 	// Login or Register
 	ipAddress := c.ClientIP()
-	userAgent := c.GetHeader("User-Agent")
+	userAgent := c.GetHeader(userAgentHeader)
 	
 	loginResp, err := h.authService.LoginWithOAuth(email, oauthID, firstName, lastName, "google", ipAddress, userAgent)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, utils.ErrorResponse("Login failed", err))
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse(msgLoginFailed, err))
 		return
 	}
 
@@ -563,7 +583,7 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	// Usually callback redirects to frontend with query params or sets cookies
 	// For this API, let's return JSON if caller can handle it, but standard Browser flow needs redirect.
 	// We'll return JSON for now as per API design, but in real app we'd redirect to frontend app URL
-	c.JSON(http.StatusOK, utils.SuccessResponse("Login successful", loginResp))
+	c.JSON(http.StatusOK, utils.SuccessResponse(msgLoginSuccess, loginResp))
 }
 
 // GitHubLogin initiates GitHub OAuth login
@@ -571,6 +591,8 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 // @Tags auth
 // @Router /api/auth/github/login [get]
 func (h *AuthHandler) GitHubLogin(c *gin.Context) {
+	clientID := c.Query("client_id")
+
 	state, err := h.oauthService.GenerateState()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse("Failed to generate state", err))
@@ -578,8 +600,17 @@ func (h *AuthHandler) GitHubLogin(c *gin.Context) {
 	}
 
 	c.SetCookie("oauth_state", state, 3600, "/", "", false, true)
+	if clientID != "" {
+		c.SetCookie("oauth_client_id", clientID, 3600, "/", "", false, true)
+	} else {
+		c.SetCookie("oauth_client_id", "", -1, "/", "", false, true)
+	}
 
-	url := h.oauthService.GetGitHubAuthURL(state)
+	url, err := h.oauthService.GetGitHubAuthURL(clientID, state)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, utils.ErrorResponse("Failed to get auth URL", err))
+		return
+	}
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -597,15 +628,18 @@ func (h *AuthHandler) GitHubCallback(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("oauth_state", "", -1, "/", "", false, true)
+	clientID, _ := c.Cookie("oauth_client_id")
 
-	token, err := h.oauthService.ExchangeGitHubCode(c.Request.Context(), code)
+	c.SetCookie("oauth_state", "", -1, "/", "", false, true)
+	c.SetCookie("oauth_client_id", "", -1, "/", "", false, true)
+
+	token, err := h.oauthService.ExchangeGitHubCode(c.Request.Context(), clientID, code)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, utils.ErrorResponse("Failed to exchange token", err))
 		return
 	}
 
-	userInfo, err := h.oauthService.FetchGitHubUser(c.Request.Context(), token)
+	userInfo, err := h.oauthService.FetchGitHubUser(c.Request.Context(), clientID, token)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, utils.ErrorResponse("Failed to fetch user info", err))
 		return
@@ -629,7 +663,7 @@ func (h *AuthHandler) GitHubCallback(c *gin.Context) {
 	oauthID := fmt.Sprintf("%.0f", userInfo["id"].(float64)) // GitHub ID is number
 
 	ipAddress := c.ClientIP()
-	userAgent := c.GetHeader("User-Agent")
+	userAgent := c.GetHeader(userAgentHeader)
 	
 	loginResp, err := h.authService.LoginWithOAuth(email, oauthID, firstName, lastName, "github", ipAddress, userAgent)
 	if err != nil {
@@ -637,7 +671,7 @@ func (h *AuthHandler) GitHubCallback(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, utils.SuccessResponse("Login successful", loginResp))
+	c.JSON(http.StatusOK, utils.SuccessResponse(msgLoginSuccess, loginResp))
 }
 
 // EnableMFA initates MFA setup

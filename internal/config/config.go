@@ -66,6 +66,7 @@ type SecurityConfig struct {
 	RateLimitMax           int
 	AccountLockMaxAttempts int
 	AccountLockDuration    int // in minutes
+	EncryptionKey          string
 }
 
 func LoadConfig() *Config {
@@ -126,6 +127,7 @@ func LoadConfig() *Config {
 			RateLimitMax:           rateLimitMax,
 			AccountLockMaxAttempts: accountLockMax,
 			AccountLockDuration:    accountLockDuration,
+			EncryptionKey:          getEnv("ENCRYPTION_KEY", "0123456789abcdef0123456789abcdef"), // default 32 byte key
 		},
 	}
 }

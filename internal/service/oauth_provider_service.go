@@ -12,6 +12,7 @@ import (
 	"github.com/roshankumar0036singh/auth-server/internal/config"
 	"github.com/roshankumar0036singh/auth-server/internal/models"
 	"github.com/roshankumar0036singh/auth-server/internal/repository"
+	"github.com/roshankumar0036singh/auth-server/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -20,6 +21,7 @@ type OAuthProviderService struct {
 	codeRepo     *repository.AuthorizationCodeRepository
 	tokenRepo    *repository.OAuthTokenRepository
 	consentRepo  *repository.UserConsentRepository
+	configRepo   *repository.OAuthProviderConfigRepository
 	tokenService *TokenService
 	cfg          *config.Config
 }
@@ -29,6 +31,7 @@ func NewOAuthProviderService(
 	codeRepo *repository.AuthorizationCodeRepository,
 	tokenRepo *repository.OAuthTokenRepository,
 	consentRepo *repository.UserConsentRepository,
+	configRepo *repository.OAuthProviderConfigRepository,
 	tokenService *TokenService,
 	cfg *config.Config,
 ) *OAuthProviderService {
@@ -37,6 +40,7 @@ func NewOAuthProviderService(
 		codeRepo:     codeRepo,
 		tokenRepo:    tokenRepo,
 		consentRepo:  consentRepo,
+		configRepo:   configRepo,
 		tokenService: tokenService,
 		cfg:          cfg,
 	}
@@ -307,3 +311,64 @@ func generateRandomString(length int) (string, error) {
 	}
 	return base64.URLEncoding.EncodeToString(bytes)[:length], nil
 }
+
+
+// CreateOrUpdateProviderConfig creates or updates provider configurations for a client
+func (s *OAuthProviderService) CreateOrUpdateProviderConfig(ownerID, clientID, provider, providerClientID, providerClientSecret string) error {
+	client, err := s.clientRepo.FindByID(clientID)
+	if err != nil || client.OwnerID != ownerID {
+		return errors.New("unauthorized")
+	}
+
+	encryptedSecret, err := utils.Encrypt(providerClientSecret, s.cfg.Security.EncryptionKey)
+	if err != nil {
+		return err
+	}
+
+	config, err := s.configRepo.FindByClientAndProvider(clientID, provider)
+	if err == nil && config != nil {
+		config.ProviderClientID = providerClientID
+		config.ProviderClientSecret = encryptedSecret
+		return s.configRepo.Update(config)
+	}
+
+	newConfig := &models.OAuthProviderConfig{
+		ClientID:             clientID,
+		Provider:             provider,
+		ProviderClientID:     providerClientID,
+		ProviderClientSecret: encryptedSecret,
+	}
+
+	return s.configRepo.Create(newConfig)
+}
+
+// GetProviderConfig returns the provider config if the user owns the client
+func (s *OAuthProviderService) GetProviderConfig(ownerID, clientID, provider string) (*models.OAuthProviderConfig, error) {
+	client, err := s.clientRepo.FindByID(clientID)
+	if err != nil || client.OwnerID != ownerID {
+		return nil, errors.New("unauthorized")
+	}
+
+	config, err := s.configRepo.FindByClientAndProvider(clientID, provider)
+	if err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+// DeleteProviderConfig removes the provider configuration
+func (s *OAuthProviderService) DeleteProviderConfig(ownerID, clientID, provider string) error {
+	client, err := s.clientRepo.FindByID(clientID)
+	if err != nil || client.OwnerID != ownerID {
+		return errors.New("unauthorized")
+	}
+
+	config, err := s.configRepo.FindByClientAndProvider(clientID, provider)
+	if err != nil {
+		return errors.New("config not found")
+	}
+
+	return s.configRepo.Delete(config.ID)
+}
+

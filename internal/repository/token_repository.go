@@ -8,6 +8,9 @@ import (
 	"gorm.io/gorm"
 )
 
+
+var ErrRefreshTokenNotFound = errors.New("refresh token not found")
+
 type TokenRepository struct {
 	db *gorm.DB
 }
@@ -26,7 +29,7 @@ func (r *TokenRepository) FindRefreshToken(tokenString string) (*models.RefreshT
 	var token models.RefreshToken
 	if err := r.db.Where("token = ?", tokenString).First(&token).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("refresh token not found")
+			return nil, ErrRefreshTokenNotFound
 		}
 		return nil, err
 	}
@@ -38,7 +41,7 @@ func (r *TokenRepository) FindRefreshTokenByID(id string) (*models.RefreshToken,
 	var token models.RefreshToken
 	if err := r.db.First(&token, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("refresh token not found")
+			return nil, ErrRefreshTokenNotFound
 		}
 		return nil, err
 	}
