@@ -24,8 +24,8 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 interface AuthProviderProps {
-  client: AuthClient;
-  children: React.ReactNode;
+  readonly client: AuthClient;
+  readonly children: React.ReactNode;
 }
 
 export function AuthProvider({ client, children }: AuthProviderProps) {
@@ -36,30 +36,33 @@ export function AuthProvider({ client, children }: AuthProviderProps) {
   useEffect(() => {
     let mounted = true;
 
-    const unsubscribe = client.onAuthStateChanged(async (newSession) => {
+    const handleSessionChange = async (newSession: Session | null) => {
       if (!mounted) return;
-
       setSession(newSession);
 
-      if (newSession && newSession.access_token) {
-        if (newSession.user) {
-          setUser(newSession.user);
-          setIsLoading(false);
-        } else {
-          try {
-            const fetchedUser = await client.getUser();
-            if (mounted) setUser(fetchedUser);
-          } catch {
-            // Don't wipe session — the interceptor handles 401s
-          } finally {
-            if (mounted) setIsLoading(false);
-          }
-        }
-      } else {
+      if (!newSession?.access_token) {
         setUser(null);
         setIsLoading(false);
+        return;
       }
-    });
+
+      if (newSession.user) {
+        setUser(newSession.user);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const fetchedUser = await client.getUser();
+        if (mounted) setUser(fetchedUser);
+      } catch {
+        // Don't wipe session — the interceptor handles 401s
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    const unsubscribe = client.onAuthStateChanged(handleSessionChange);
 
     return () => {
       mounted = false;

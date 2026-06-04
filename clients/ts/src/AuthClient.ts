@@ -13,13 +13,13 @@ export class AuthError extends Error {
 }
 
 export class AuthClient {
-  private serverUrl: string;
-  private clientId: string;
+  private readonly serverUrl: string;
+  private readonly clientId: string;
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
-  private storageType: 'localStorage' | 'sessionStorage' | 'memory';
-  private storageKey: string;
-  private listeners: Set<AuthStateChangeCallback> = new Set();
+  private readonly storageType: 'localStorage' | 'sessionStorage' | 'memory';
+  private readonly storageKey: string;
+  private readonly listeners: Set<AuthStateChangeCallback> = new Set();
   private isRefreshing = false;
   private refreshPromise: Promise<Session> | null = null;
 
@@ -38,8 +38,8 @@ export class AuthClient {
   // --- Storage & Events ---
 
   private getStorage(): Storage | null {
-    if (this.storageType === 'memory' || typeof window === 'undefined') return null;
-    return this.storageType === 'localStorage' ? window.localStorage : window.sessionStorage;
+    if (this.storageType === 'memory' || typeof globalThis.window === 'undefined') return null;
+    return this.storageType === 'localStorage' ? globalThis.localStorage : globalThis.sessionStorage;
   }
 
   private loadSession() {
@@ -75,8 +75,8 @@ export class AuthClient {
     }
 
     this.notifyListeners({
-      access_token: this.accessToken!,
-      refresh_token: this.refreshToken || undefined,
+      access_token: session.access_token,
+      refresh_token: session.refresh_token || undefined,
       user: session.user,
     });
   }
@@ -142,7 +142,7 @@ export class AuthClient {
       const payloadBase64Url = token.split('.')[1];
       if (!payloadBase64Url) return true;
       
-      const payloadBase64 = payloadBase64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payloadBase64 = payloadBase64Url.replaceAll('-', '+').replaceAll('_', '/');
       let payloadJson = '';
       
       if (typeof atob !== 'undefined') {
@@ -187,9 +187,10 @@ export class AuthClient {
     let response: Response;
     try {
       response = await fetch(`${this.serverUrl}${path}`, { ...options, headers });
-    } catch (err) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       throw new AuthError(
-        'Network error: unable to reach the auth server',
+        `Network error: unable to reach the auth server (${msg})`,
         'NETWORK_ERROR',
         0
       );
@@ -298,10 +299,10 @@ export class AuthClient {
    * This method only works in browser environments.
    */
   public loginWithGoogle(): void {
-    if (typeof window === 'undefined') {
+    if (typeof globalThis.window === 'undefined') {
       throw new AuthError('loginWithGoogle() can only be used in a browser', 'BROWSER_ONLY', 0);
     }
-    window.location.href = `${this.serverUrl}/api/auth/google/login?client_id=${encodeURIComponent(this.clientId)}`;
+    globalThis.window.location.href = `${this.serverUrl}/api/auth/google/login?client_id=${encodeURIComponent(this.clientId)}`;
   }
 
   /**
@@ -309,10 +310,10 @@ export class AuthClient {
    * This method only works in browser environments.
    */
   public loginWithGitHub(): void {
-    if (typeof window === 'undefined') {
+    if (typeof globalThis.window === 'undefined') {
       throw new AuthError('loginWithGitHub() can only be used in a browser', 'BROWSER_ONLY', 0);
     }
-    window.location.href = `${this.serverUrl}/api/auth/github/login?client_id=${encodeURIComponent(this.clientId)}`;
+    globalThis.window.location.href = `${this.serverUrl}/api/auth/github/login?client_id=${encodeURIComponent(this.clientId)}`;
   }
 
   // --- User Profile & Account ---
