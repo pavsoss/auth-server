@@ -99,7 +99,7 @@ func (s *AuthService) createRefreshToken(userID, token, ipAddress, userAgent str
 func (s *AuthService) hashPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword(
 		[]byte(password),
-		bcrypt.DefaultCost,
+		s.config.Security.BcryptRounds,
 	)
 
 	if err != nil {

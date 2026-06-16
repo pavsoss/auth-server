@@ -70,7 +70,7 @@ func (s *OAuthProviderService) CreateClient(name string, redirectURIs []string, 
 	}
 
 	// Hash the client secret
-	hashedSecret, err := bcrypt.GenerateFromPassword([]byte(clientSecret), bcrypt.DefaultCost)
+	hashedSecret, err := bcrypt.GenerateFromPassword([]byte(clientSecret), s.cfg.Security.BcryptRounds)
 	if err != nil {
 		return nil, "", err
 	}
